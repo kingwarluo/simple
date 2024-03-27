@@ -27,7 +27,7 @@ public class CommandOderCreateDTO {
     /**
      * 用户id
      */
-    private String userId;
+    private Long userId;
 
 
 }

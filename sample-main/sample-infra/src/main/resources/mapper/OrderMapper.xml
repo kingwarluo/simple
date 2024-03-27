@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hixtrip.sample.infra.db.mapper.OrderMapper">
+    <insert id="saveOrder">
+        insert into tb_order(
+            id,
+            user_id,
+            sku_id,
+            amount,
+            money,
+            pay_time,
+            pay_status,
+            del_flag,
+            create_by,
+            create_time,
+            update_by,
+            update_time
+        )
+        values
+        (
+            #{order.id},
+            #{order.userId},
+            #{order.skuId},
+            #{order.amount},
+            #{order.money},
+            #{order.payTime},
+            #{order.payStatus},
+            #{order.delFlag},
+            #{order.createBy},
+            #{order.createTime},
+            #{order.updateBy},
+            #{order.updateTime}
+        )
+
+    </insert>
+
+    <update id="orderPaySuccess">
+        update tb_order set pay_status = 1, update_time = now() where id = #{commandPay.orderId} and pay_status = 0
+    </update>
+
+    <update id="orderPayFail">
+        update tb_order set pay_status = 2, update_time = now() where id = #{commandPay.orderId} and pay_status = 0
+    </update>
+</mapper>
