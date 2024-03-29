@@ -1,0 +1,43 @@
+-- 存量订单10亿, 日订单增长百万量级。
+-- 主查询场景如下:
+-- 1. 买家频繁查询我的订单, 高峰期并发100左右。实时性要求高。
+    利用mysql分库分表-分16个库，1024张表，每个库64张表；10亿数据，每个表200万行；按每张表1000万行最佳，日增长200万数据的情况下，能支撑5年内业务
+    分片键采用基因法，类似雪花算法，此处将雪花算法序列号和机器码位置对调。订单id：1位符号位+41位时间戳+12位序列号+10位表位置（用户id%1024，表示表位置）
+    
+-- 2. 卖家频繁查询我的订单, 高峰期并发30左右。允许秒级延迟。
+    在第一步基础上，增加索引表，将订单id和门店id关联。
+        1、查询时用门店id查询订单id集合，根据创建时间排序，分页查询
+        2、根据订单id集合，定位要查询的库和表，进行分片查询
+    CREATE TABLE `tb_shop_order` (
+        `id` bigint NOT NULL,
+        `shop_id` BIGINT(20) NOT NULL DEFAULT '0' COMMENT '购买人id',
+        `order_id` varchar(50) DEFAULT NULL COMMENT '购买的sku_id',
+        `order_create_time` datetime DEFAULT NULL COMMENT '订单创建时间',
+        PRIMARY KEY (`id`) USING BTREE,
+        key `idx_shop_id`(`shop_id`)
+    ) ENGINE=InnoDB COMMENT '门店订单映射表';
+
+-- 3. 平台客服频繁搜索客诉订单(半年之内订单, 订单尾号，买家姓名搜索)，高峰期并发10左右。允许分钟级延迟。
+        1、在搜索引擎es创建index
+        2、将订单查询字段迁移到es
+        3、用订单尾号（prefix匹配）或买家姓名（分词搜索）搜索结果
+        4、回查mysql表，查询订单详情
+    PUT index_order
+    {
+        "mappings": {
+            "properties": {
+                "orderSn": {  // reverse存储
+                    "type": "text"
+                },
+                "buyer_name": {
+                    "type": "text",
+                    "analyzer": "ik_max_word"
+                },
+                "order_create_time": {
+                    "type": "datetime"
+                }
+            }
+        }
+    }
+-- 4. 平台运营进行订单数据分析，如买家订单排行榜, 卖家订单排行榜。
+    将订单数据异构到hadoop集群，用hive进行每日买家排行、卖家排行统计
