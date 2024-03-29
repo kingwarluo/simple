@@ -31,6 +31,10 @@ public class InventoryDomainService {
      * @return
      */
     public boolean changeInventory(String skuId, Integer occupiedQuantity) {
+        if (occupiedQuantity < 0) {
+            inventoryRepository.releaseInventory(skuId, -occupiedQuantity);
+            return true;
+        }
         return inventoryRepository.occupyInventory(skuId, occupiedQuantity);
     }
 }

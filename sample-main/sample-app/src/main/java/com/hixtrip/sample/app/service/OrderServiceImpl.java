@@ -46,16 +46,22 @@ public class OrderServiceImpl implements OrderService {
             log.info("商品已售罄");
             return 0L;
         }
-        Order order = new Order();
-        order.setId(IdWorker.getId());
-        order.setUserId(commandOderCreateDTO.getUserId());
-        order.setSkuId(commandOderCreateDTO.getSkuId());
-        order.setAmount(commandOderCreateDTO.getAmount());
-        order.setMoney(commodityDomainService.getSkuPrice(order.getSkuId()));
-        order.setPayTime(LocalDateTime.now());
-        order.setPayStatus(OrderStatusEnum.WAIT_PAY.getStatus());
-        orderDomainService.createOrder(order);
-        return order.getId();
+        try {
+            Order order = new Order();
+            order.setId(IdWorker.getId());
+            order.setUserId(commandOderCreateDTO.getUserId());
+            order.setSkuId(commandOderCreateDTO.getSkuId());
+            order.setAmount(commandOderCreateDTO.getAmount());
+            order.setMoney(commodityDomainService.getSkuPrice(order.getSkuId()));
+            order.setPayTime(LocalDateTime.now());
+            order.setPayStatus(OrderStatusEnum.WAIT_PAY.getStatus());
+            orderDomainService.createOrder(order);
+            return order.getId();
+        } catch (Exception e) {
+            // 业务逻辑出错，返还库存
+            inventoryDomainService.changeInventory(commandOderCreateDTO.getSkuId(), - commandOderCreateDTO.getAmount());
+        }
+        return 0L;
     }
 
     /**

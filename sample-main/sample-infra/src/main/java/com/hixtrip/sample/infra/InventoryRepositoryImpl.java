@@ -30,19 +30,40 @@ public class InventoryRepositoryImpl implements InventoryRepository {
         return (Integer) redisTemplate.opsForValue().get(getSkuInventoryKey(skuId));
     }
 
+    /**
+     * 占用库存
+     * @param skuId
+     * @param occupiedQuantity
+     * @return
+     */
     @Override
     public boolean occupyInventory(String skuId, Integer occupiedQuantity) {
-        String script = "if tonumber(redis.call('get', KEYS[1])) > 0 then if tonumber(redis.call('decrby', KEYS[1], KEYS[2])) >= 0 then return 1 end else return 0 end";
-        DefaultRedisScript<Integer> redisScript = new DefaultRedisScript();
+        String script = "if tonumber(redis.call('get', KEYS[1])) >= tonumber(ARGV[1]) then return redis.call('decrby', KEYS[1], ARGV[1]) else return 0 end";
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript();
         redisScript.setScriptText(script);
-        redisScript.setResultType(Integer.class);
+        redisScript.setResultType(Long.class);
 
         List<String> keyList = new ArrayList<>();
         keyList.add(getSkuInventoryKey(skuId));
-        keyList.add(occupiedQuantity.toString());
-        return redisTemplate.execute(redisScript, keyList) == 1;
+        return redisTemplate.execute(redisScript, keyList, occupiedQuantity) > 0L;
     }
 
+    /**
+     * 释放占用库存
+     * @param skuId
+     * @param occupiedQuantity
+     * @return
+     */
+    @Override
+    public void releaseInventory(String skuId, Integer occupiedQuantity) {
+        redisTemplate.opsForValue().increment(getSkuInventoryKey(skuId), occupiedQuantity);
+    }
+
+    /**
+     * redis key 构造
+     * @param skuId
+     * @return
+     */
     public String getSkuInventoryKey(String skuId) {
         return String.format(SKU_INVENTORY_KEY, skuId);
     }

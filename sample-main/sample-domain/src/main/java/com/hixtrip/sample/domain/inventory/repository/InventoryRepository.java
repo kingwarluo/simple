@@ -19,4 +19,13 @@ public interface InventoryRepository {
      * @return 是否扣减成功
      */
     boolean occupyInventory(String skuId, Integer occupiedQuantity);
+
+    /**
+     * 释放占用库存
+     *
+     * @param skuId
+     * @param occupiedQuantity
+     * @return
+     */
+    void releaseInventory(String skuId, Integer occupiedQuantity);
 }
