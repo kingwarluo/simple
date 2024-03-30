@@ -40,5 +40,5 @@
         }
     }
 -- 4. 平台运营进行订单数据分析，如买家订单排行榜, 卖家订单排行榜。
-    使用数据同步工具canal/data bus将订单数据异构到hdfs，用hive进行每日买家排行、卖家排行统计
+    使用数据同步工具canal/data bus将订单数据(异构到hdfs，用hive)(异构到clickhouse)进行每日买家排行、卖家排行统计
     或者使用数据同步工具canal/data bus将订单数据异构到mq，用spark/flink进行实时统计，能做到exactly once
